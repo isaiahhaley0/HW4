@@ -14,6 +14,7 @@ var jwt = require('jsonwebtoken');
 var cors = require('cors');
 var User = require('./Users');
 var Movie = require('./Movies');
+var Review = require('./Reviews')
 var app = express();
 app.use(cors());
 app.use(bodyParser.json());
@@ -90,15 +91,19 @@ router.route('/movies')
 
 
     .get(function (req, res) {
-        var movie = new Movie();
-        Movie.find({}, function (err,) {
-            if (err) throw err;
+        var toFind = new Movie();
+        toFind.title = req.body.title;
+        toFind.year = req.body.year;
+        Movie.findOne({title: toFind.title},function(err,movi){
+            if(err)
+            {
+                res.status(400).send({success: false,msg:"Err"});
+            }
             else
-                console.log(movie);
-            res = res.status(200);
-            res.json({success: true, msg: 'got movies.'});
-        });
-
+            {
+                res.status(200).send({success: true})
+            }
+        })
     })
     .post(function (req, res) {
         if (!req.body.title || !req.body.genre || !req.body.year || !req.body.actors && req.body.actors.length) {
