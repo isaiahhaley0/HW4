@@ -88,9 +88,9 @@ router.post('/signin', function (req, res) {
 });
 router
     .route("/reviews")
-    .post(authJwtController.isAuthenticated, (req, res) => {
-        newReview = new Review(req.body);
-        newReview.save().then(
+    .post((req, res) => {
+        movieReview = new Review(req.body);
+        movieReview.save().then(
             () => {
                 Movie.findById(req.body.movie_id, (movErr, movie) => {
                     Review.aggregate(
