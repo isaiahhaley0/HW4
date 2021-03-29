@@ -90,7 +90,7 @@ router
             res.json({success: false, message: "no movie requested"})
         }
         else if(req.query.reviews === "true"){
-            Movie.findOne({title:req.body.title}, function(err, movie) {
+            Movie.findOne({title:req.body.title}, function(err, Movie) {
                 if (err) {
                     res.json({success: false, message: "not found"})
                 }
