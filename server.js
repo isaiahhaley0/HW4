@@ -150,7 +150,7 @@ router
         {
             res.json({success: false, message: "no movie requested"})
         }
-        else if
+        
         Review.find((err, reviewList) => {
             res.send(reviewList);
         });
