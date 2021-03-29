@@ -1,10 +1,6 @@
 
-/*
-CSC3916 HW2
-File: Server.js
-Description: Web API scaffolding for Movie API
- */
 
+var mongoose = require("mongoose");
 var express = require('express');
 var bodyParser = require('body-parser');
 var passport = require('passport');
@@ -86,72 +82,124 @@ router.post('/signin', function (req, res) {
         })
     })
 });
+
+router.route('/movies/:movieId')
+    .get(authJwtController.isAuthenticated, function (req, res) {
+        if (req.query.reviews == "true") {
+            var id = req.params.movieId;
+
+            Movie.aggregate()
+                .match({
+                    _id: mongoose.Types.ObjectId(id
+                    )})
+
+                .lookup({
+                    from: 'reviews',
+                    localField: '_id',
+                    foreignField: 'movieID',
+                    as: 'reviews'
+                })
+
+                .exec(function (err, movie) {
+                    if (err) return res.send(err);
+                    if (movie && movie.length > 0) {
+                        // Add avgRating
+                        for (let j = 0; j < movie.length; j++) {
+                            let total = 0;
+                            for (let i = 0; i < movie[j].reviews.length; i++) {
+                                total += movie[j].reviews[i].rating;
+                            }
+                            if (movie[j].reviews.length > 0) {
+                                movie[j] = Object.assign({}, movie[j],
+                                    {avgRating: (total/movie[j].reviews.length).toFixed(1)});
+                            }
+                        }
+                        movie.sort((a,b) => {
+                            return b.avgRating - a.avgRating;
+                        });
+                        return res.status(200).json({
+                            success: true,
+                            result: movie
+                        });
+                    }
+                    else return res.status(400).json({ success: false, message: "Movie not found."});
+                })
+
+        }
+
+        else {
+            var id = req.params.movieId;
+            Movie.findById(id, function(err, movie) {
+                if (err) res.send(err);
+                if (movie) {
+                    res.status(200).send({ success: true, result: movie });
+                }
+                else {
+                    res.status(400).send({ success: false, message: "Movie not found" });
+                }
+            });
+        }
+    });
+
+
 router
     .route("/reviews")
-    .post((req, res) => {
-        movieReview = new Review(req.body);
-        movieReview.save().then(
-            () => {
-                Movie.findById(req.body.movie_id, (movErr, movie) => {
-                    Review.aggregate(
-                        [
-                            {
-                                $match: {
-                                    movie_id: mongoose.Types.ObjectId(req.body.movie_id),
-                                },
-                            },
-                        ],
-                        (err, reviews) => {
-                            avgRating = 0;
 
-                            reviews.forEach((review) => {
-                                avgRating += review.rating;
-                            });
-
-                            avgRating /= reviews.length;
-
-                            movie.update({ avg_rating: avgRating }, (err, raw) => {
-                                if (err) {
-                                    console.log(err);
-                                }
-                                if (raw) {
-                                    console.log(raw);
-                                }
-                            });
-                        }
-                    );
-
-                    res.status(201).send({
-                        success: true,
-                        message: "Review created.",
-                    });
-                });
-            },
-            () => {
-                res.status(201).send({
-                    success: false,
-                    message: "Review not created.",
-                });
-            }
-        );
-    })
     .get((req, res) => {
+        if(!req.body.title)
+        {
+            res.json({success: false, message: "no movie requested"})
+        }
+        else if
         Review.find((err, reviewList) => {
             res.send(reviewList);
         });
     });
 router.route('/movies')
-    .get(function (req, res) {
-        var movie = new Movie();
-        Movie.find({}, function (err,) {
-            if (err) throw err;
-        else {
-                console.log(movie);
-                res = res.status(200);
-                res.json({success: true, msg: 'got movies.'});
+    .get( function (req, res) {
+    if (req.query.reviews == "true") {
+    Movie.aggregate()
+        .match(req.body)
+
+        .lookup({
+            from: 'reviews',
+            localField: '_id',
+            foreignField: 'movieID',
+            as: 'reviews'
+        })
+
+        .exec(function (err, movie) {
+            if (err) return res.send(err);
+            if (movie && movie.length > 0) {
+                // Add avgRating
+                for (let j = 0; j < movie.length; j++) {
+                    let total = 0;
+                    for (let i = 0; i < movie[j].reviews.length; i++) {
+                        total += movie[j].reviews[i].rating;
+                    }
+                    if (movie[j].reviews.length > 0) {
+                        movie[j] = Object.assign({}, movie[j],
+                            {avgRating: (total/movie[j].reviews.length).toFixed(1)});
+                    }
+                }
+                movie.sort((a,b) => {
+                    return b.avgRating - a.avgRating;
+                });
+                return res.status(200).json(movie);
             }
-        });
+
+            else return res.status(400).json({ success: false, message: "Movie not found."});
+        })
+}
+
+else {
+    Movie.find(function (err, movie) {
+        if (err)
+            res.send(err);
+        else res.json(movie);
     })
+}
+})
     .post(function (req, res) {
         if (!req.body.title || !req.body.genre || !req.body.year || !req.body.actors && req.body.actors.length) {
             res.json({success: false, message: 'Supply title, genre, year, actors and the characters they play'});
