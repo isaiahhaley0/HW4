@@ -82,79 +82,67 @@ router.post('/signin', function (req, res) {
         })
     })
 });
-
-router.route('/movies/:movieId')
-    .get(authJwtController.isAuthenticated, function (req, res) {
-        if (req.query.reviews == "true") {
-            var id = req.params.movieId;
-
-            Movie.aggregate()
-                .match({
-                    _id: mongoose.Types.ObjectId(id
-                    )})
-
-                .lookup({
-                    from: 'reviews',
-                    localField: '_id',
-                    foreignField: 'movieID',
-                    as: 'reviews'
-                })
-
-                .exec(function (err, movie) {
-                    if (err) return res.send(err);
-                    if (movie && movie.length > 0) {
-                        // Add avgRating
-                        for (let j = 0; j < movie.length; j++) {
-                            let total = 0;
-                            for (let i = 0; i < movie[j].reviews.length; i++) {
-                                total += movie[j].reviews[i].rating;
-                            }
-                            if (movie[j].reviews.length > 0) {
-                                movie[j] = Object.assign({}, movie[j],
-                                    {avgRating: (total/movie[j].reviews.length).toFixed(1)});
-                            }
-                        }
-                        movie.sort((a,b) => {
-                            return b.avgRating - a.avgRating;
-                        });
-                        return res.status(200).json({
-                            success: true,
-                            result: movie
-                        });
-                    }
-                    else return res.status(400).json({ success: false, message: "Movie not found."});
-                })
-
-        }
-
-        else {
-            var id = req.params.movieId;
-            Movie.findById(id, function(err, movie) {
-                if (err) res.send(err);
-                if (movie) {
-                    res.status(200).send({ success: true, result: movie });
-                }
-                else {
-                    res.status(400).send({ success: false, message: "Movie not found" });
-                }
-            });
-        }
-    });
-
-
 router
     .route("/reviews")
-
     .get((req, res) => {
         if(!req.body.title)
         {
             res.json({success: false, message: "no movie requested"})
         }
-        
+        else if(req.query.reviews === "true"){
+            Movie.findOne({title:req.body.title}, function(err, movie) {
+                if (err) {
+                    res.json({success: false, message: "not found"})
+                }
+                else{
+                    Movie.aggregate([{
+                        $match: {title: req.body.title}
+                    },
+                        {
+                            $lookup: {
+                                from: "reviews",
+                                localField: "title",
+                                foreignField: "title",
+                                as: "movieReview"
+                            }
+                        }]).exec(function (err, movie) {
+                        if (err) {
+                            return res.json({success: false, message:err});
+                        } else {
+                            return res.json({success: true, movie});
+                        }
+                    })
+                }
+            })
+        }
         Review.find((err, reviewList) => {
             res.send(reviewList);
         });
-    });
+    })
+    .post(function(req,res)  {
+        if(!req.body.title || !req.body.name || !req.body.rating || !req.body.quote)
+        {
+            res.status(403).json({success: false, message: "improper arguments"   });
+        }
+        else {
+                var review = new Review();
+                review.name = req.body.name;
+                review.title = req.body.title;
+                review.rating = req.body.rating;
+                review.quote = req.body.quote;
+                review.save(function(err){
+                    if (err) {
+                        if (err.code == 11000)
+                            return res.json({ success: false, message: 'already exists.'});
+                        else
+                            return res.json(err.message);
+                    }
+
+                    res.json({success: true, message: 'Successfully created new review.'})
+                });
+            }
+
+});
 router.route('/movies')
     .get( function (req, res) {
     if (req.query.reviews == "true") {
