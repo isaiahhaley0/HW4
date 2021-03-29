@@ -74,7 +74,7 @@ router.post('/signin', function (req, res) {
             res.send(err);
         }
 
-        user.comparePassword(userNew.password, function(isMatch) {
+        User.comparePassword(userNew.password, function(isMatch) {
             if (isMatch) {
                 var userToken = { id: user.id, username: user.username };
                 var token = jwt.sign(userToken, process.env.SECRET_KEY);
@@ -86,24 +86,71 @@ router.post('/signin', function (req, res) {
         })
     })
 });
+router
+    .route("/reviews")
+    .post(authJwtController.isAuthenticated, (req, res) => {
+        newReview = new Review(req.body);
+        newReview.save().then(
+            () => {
+                Movie.findById(req.body.movie_id, (movErr, movie) => {
+                    Review.aggregate(
+                        [
+                            {
+                                $match: {
+                                    movie_id: mongoose.Types.ObjectId(req.body.movie_id),
+                                },
+                            },
+                        ],
+                        (err, reviews) => {
+                            avgRating = 0;
 
+                            reviews.forEach((review) => {
+                                avgRating += review.rating;
+                            });
+
+                            avgRating /= reviews.length;
+
+                            movie.update({ avg_rating: avgRating }, (err, raw) => {
+                                if (err) {
+                                    console.log(err);
+                                }
+                                if (raw) {
+                                    console.log(raw);
+                                }
+                            });
+                        }
+                    );
+
+                    res.status(201).send({
+                        success: true,
+                        message: "Review created.",
+                    });
+                });
+            },
+            () => {
+                res.status(201).send({
+                    success: false,
+                    message: "Review not created.",
+                });
+            }
+        );
+    })
+    .get((req, res) => {
+        Review.find((err, reviewList) => {
+            res.send(reviewList);
+        });
+    });
 router.route('/movies')
-
-
     .get(function (req, res) {
-        var toFind = new Movie();
-        toFind.title = req.body.title;
-        toFind.year = req.body.year;
-        Movie.findOne({title: toFind.title},function(err,movi){
-            if(err)
-            {
-                res.status(400).send({success: false,msg:"Err"});
+        var movie = new Movie();
+        Movie.find({}, function (err,) {
+            if (err) throw err;
+        else {
+                console.log(movie);
+                res = res.status(200);
+                res.json({success: true, msg: 'got movies.'});
             }
-            else
-            {
-                res.status(200).send({success: true})
-            }
-        })
+        });
     })
     .post(function (req, res) {
         if (!req.body.title || !req.body.genre || !req.body.year || !req.body.actors && req.body.actors.length) {
