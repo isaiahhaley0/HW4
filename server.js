@@ -197,7 +197,7 @@ else {
                 res.json({ success: false, message: 'three actors needed'});
             }
             else {
-                var movie = new Movie(req, res);
+                const movie = new Movie(req, res);
                 movie.Title = req.body.title;
                 movie.Year = req.body.year;
                 movie.Genre = req.body.genre;
@@ -222,7 +222,7 @@ else {
         movie.year = req.body.year;
         movie.genre = req.body.genre;
         movie.actors= req.body.actors;
-        movie.imageUrl = req.body.imageUrl;
+        movie.imageUrl = req.body.imageURL;
         if (Movie.find({title: movie.title}, function (err, m) {
             movie.save(function (err, m) {
                 if (err) throw err;
