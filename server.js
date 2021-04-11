@@ -202,7 +202,7 @@ else {
                 movie.Year = req.body.year;
                 movie.Genre = req.body.genre;
                 movie.Actors= req.body.actors;
-
+                movie.imageUrl = req.body.imageUrl;
                 movie.save(function(err) {
                     if (err) {
                         if (err.code == 11000)
