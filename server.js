@@ -89,35 +89,12 @@ router
         {
             res.json({success: false, message: "no movie requested"})
         }
-        else if(req.query.reviews === "true"){
-            Movie.findOne({title:req.body.title}, function(err, Movie) {
-                if (err) {
-                    res.json({success: false, message: "not found"})
-                }
-                else{
-                    Movie.aggregate([{
-                        $match: {title: req.body.title}
-                    },
-                        {
-                            $lookup: {
-                                from: "reviews",
-                                localField: "title",
-                                foreignField: "title",
-                                as: "movieReview"
-                            }
-                        }]).exec(function (err, movie) {
-                        if (err) {
-                            return res.json({success: false, message:err});
-                        } else {
-                            return res.json({success: true, movie});
-                        }
-                    })
-                }
-            })
-        }
-        Review.find((err, reviewList) => {
-            res.send(reviewList);
-        });
+        Review.findOne({title: req.body.title}, function(err, review) {
+
+            if (err) {res.json({message: "Read error, Please try again \n", error: err});}
+
+            res.json(review);
+        })
     })
     .post(function(req,res)  {
         if(!req.body.title || !req.body.name || !req.body.rating || !req.body.quote)
@@ -145,21 +122,20 @@ router
 });
 router.route('/movies')
     .get( function (req, res) {
-    if (req.query.reviews == "true") {
+    if (req.query.reviews === "true") {
     Movie.aggregate()
         .match(req.body)
 
         .lookup({
             from: 'reviews',
-            localField: '_id',
-            foreignField: 'movieID',
+            localField: 'title',
+            foreignField: 'title',
             as: 'reviews'
         })
 
         .exec(function (err, movie) {
             if (err) return res.send(err);
-            if (movie && movie.length > 0) {
-                // Add avgRating
+            if (movie && movie.length > 0) { 
                 for (let j = 0; j < movie.length; j++) {
                     let total = 0;
                     for (let i = 0; i < movie[j].reviews.length; i++) {
