@@ -222,7 +222,7 @@ else {
         movie.year = req.body.year;
         movie.genre = req.body.genre;
         movie.actors= req.body.actors;
-
+        movie.imageUrl = req.body.imageUrl;
         if (Movie.find({title: movie.title}, function (err, m) {
             movie.save(function (err, m) {
                 if (err) throw err;
