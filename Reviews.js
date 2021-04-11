@@ -19,7 +19,7 @@ var ReviewSchema = new Schema({
     name: {type: String},
     title: { type: String},
     quote: {type: String},
-    rating: {type: "number"}
+    rating: {type: Number}
 });
 
 
