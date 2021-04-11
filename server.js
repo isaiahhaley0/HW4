@@ -135,7 +135,7 @@ router.route('/movies')
 
         .exec(function (err, movie) {
             if (err) return res.send(err);
-            if (movie && movie.length > 0) { 
+            if (movie && movie.length > 0) {
                 for (let j = 0; j < movie.length; j++) {
                     let total = 0;
                     for (let i = 0; i < movie[j].reviews.length; i++) {
