@@ -19,7 +19,8 @@ var MovieSchema = new Schema({
     title: { type: String},
     year: {type: Number, min:[1900, 'Must be greater than 1899'], max:[2100,'Must be less than 2100'], required: true },
     genre: { type:String},
-    actors: [{ actorName: String, characterName: String}]
+    actors: [{ actorName: String, characterName: String}],
+    imageUrl: {data:Buffer, contentType: String}
 });
 MovieSchema.methods.find = function (err, movies)
 {
